@@ -29,8 +29,32 @@ $$L_i(θ_i)= (y_i - Q(s_i,a_i;θ_i))^2$$ where $ y_i = r + γ*maxQ_{target}(s_{i
 Two important notes here:
 * The target $y$ depicts the expected rewards of a (state, action) pair as the sum of the immediate reward of the action and the highest expected
 value after following any action at the next state, where the latter is discounted by a fator of $γ$.
-* The next state q values are not obtained from the trainable network; another network, the target network (with the same architecture as the original) is used to compute the max q value for the target $y$. The only difference with the original is that this network has more stable weights, which are updated from the original, though at a slower pace using the formula:
+* The next state q-values are not obtained from the trainable network; another network, the target network (with the same architecture as the original) is used to compute the max q value for the target $y$. The only difference with the original is that this network has more stable weights, which are updated from the original, though at a slower pace using the formula:
 $$θ_t = kθ + (1-k)θ_t$$
 
 
+### Experience Replay
 
+In order to improve the efficacy as well as the efficiency of the learning process, the idea of experience replay is implemented. According to it, the examples ran at each iteration are stored in a buffer from where a sample is taken in order to calculate the gradients and update the weights. The replay buffer follows the **SARS** logic (state, action, rewrds, next state). In a nutshell, the overall process has the following steps:
+1. At the beginning of each episode, initialize the buffer and get the intitial states.
+2. At every iteration generate a SARS sequence for every state implementing an **e-greedy** policy (with probability e select at random, otherwise select the action that maximizes target $y$) and store the experiences in the buffer. Also update the target network weights by the aforementioned formula.
+3. Every x iterations, draw a random sample from the buffer and use it to train the model (***Note***: the buffer contains only the raw values of the examples, so q-values will be calculated again based on current networks' weights - which is the whole point anyway).
+
+### Network Architecture
+
+The network layers are as follows:
+* **Input layer**:
+  * $3|V|$ neurons, where $V$ stands for the vehicles available (specified by instance data). For each vehicle we keep track of its profit, load and cost.
+* **1st hidden layer**:
+  * 32 neurons
+  * ReLu activation 
+* **2nd hidden layer**:
+  * 16 neurons
+  * ReLu activation
+* **Output layer**:
+  * 7 neurons (as many as the actions)
+  * Linear activation (rewards can be negative - when the action generates an infeasible solution, so we don't want to constrain the output)
+
+Regarding the hidden layers, I'm considering the implementation of LeakyReLu activations instead of plain ReLu, since it will provide the flexibility of having negative outputs in those layers as well. The drawback with this idea is that it will possibly cause the outputs to deviate and thus slow down learning.
+
+Another concern has to do with the scale difference between inputs and outputs. Inputs have a scale of $i * 10^2$, whereas outputs are in most cases around $i * 10^0$ (except for when the action is infeasible, in which case the reward is placed at -1000). I believe that lowering the scale of the inputs to match that of the outputs will accelerate learning, therefore I am about to implement one of the following alternatives:
