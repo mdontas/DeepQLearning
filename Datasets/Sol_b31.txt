@@ -1,0 +1,18 @@
+Vehicle 1
+0 128 7 14 163 331 68 124 44 269 0 Profit: 181 Load: 149 Cost: 199.457
+Vehicle 2
+0 220 262 123 115 32 305 46 188 211 258 0 Profit: 185 Load: 150 Cost: 199.25
+Vehicle 3
+0 82 300 97 31 145 17 29 116 0 Profit: 181 Load: 149 Cost: 199.827
+Vehicle 4
+0 234 169 330 15 173 286 204 0 Profit: 191 Load: 145 Cost: 199.647
+Vehicle 5
+0 69 77 198 228 209 131 43 166 0 Profit: 190 Load: 150 Cost: 190.793
+Vehicle 6
+0 165 176 197 51 137 103 26 233 0 Profit: 178 Load: 148 Cost: 197.794
+Duration: 200
+Capacity: 150
+Time: 355.243
+Totalcost: 1186.77
+TotalProfit: 1106
+Iter: 2
