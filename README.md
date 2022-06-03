@@ -12,8 +12,8 @@ The said algorithm consists of the following main components:
   3. Swap between an inner node (part of the current solution) and an outer
   4. Swap between two inner nodes
   5. Relocation of an inner node to another position in the solution
-  6. 2opt move
-  7. Execution of [a TSP heuristic](http://webhotel4.ruc.dk/~keld/research/LKH/) on every solution route
+  6. [2opt](https://en.wikipedia.org/wiki/2-opt) move
+  7. Execution of a [TSP heuristic](http://webhotel4.ruc.dk/~keld/research/LKH/) on every solution route
 
 The way DQL pursues to increase the quality of the algorithm is by tackling the
 problem of optimallly selecting among the available operators at each iteration.
@@ -24,18 +24,17 @@ on each solution state with a view of eventually achieving the biggest profit po
 
 DQL is a value function method, meaning that it tries to estimate the expected future reward of an action executed on a certain state. It uses a neural network as a value function approximator, which is trained via the following loss function:
 
-$$L_i(θ_i)= (y_i - Q(s_i,a_i;θ_i))^2$$ where $ y_i = r + γ*maxQ_{target}(s_{i+1};θ_t)$
+$$L_i(θ_i)= (y_i - Q(s_i,a_i;θ_i))^2$$ where $ y_i = r_i + γ*maxQ_{target}(s_{i+1};θ_t)$
 
 Two important notes here:
 * The target $y$ depicts the expected rewards of a (state, action) pair as the sum of the immediate reward of the action and the highest expected
-value after following any action at the next state, where the latter is discounted by a fator of $γ$.
-* The next state q-values are not obtained from the trainable network; another network, the target network (with the same architecture as the original) is used to compute the max q value for the target $y$. The only difference with the original is that this network has more stable weights, which are updated from the original, though at a slower pace using the formula:
+value after following the optimal policy at every next state, where the latter is discounted by a fator of $γ$.
+* The next state q-values are not obtained from the trainable network; another model, the target network (with the same architecture as the original) is used to compute the max q-value for the target $y$. The only difference with the original is that this network has more stable weights, which are updated from the original, though at a slower pace using the formula:
 $$θ_t = kθ + (1-k)θ_t$$
-
 
 ### Experience Replay
 
-In order to improve the efficacy as well as the efficiency of the learning process, the idea of experience replay is implemented. According to it, the examples ran at each iteration are stored in a buffer from where a sample is taken in order to calculate the gradients and update the weights. The replay buffer follows the **SARS** logic (state, action, rewrds, next state). In a nutshell, the overall process has the following steps:
+In order to improve the efficacy as well as the efficiency of the learning process, the idea of experience replay is implemented. According to it, the examples ran at each iteration are stored in a buffer, from where a sample is taken in order to calculate the gradients and update the weights. The replay buffer follows the **SARS** logic (state, action, rewards, next state). In a nutshell, the overall process has the following steps:
 1. At the beginning of each episode, initialize the buffer and get the intitial states.
 2. At every iteration generate a SARS sequence for every state implementing an **e-greedy** policy (with probability e select at random, otherwise select the action that maximizes target $y$) and store the experiences in the buffer. Also update the target network weights by the aforementioned formula.
 3. Every x iterations, draw a random sample from the buffer and use it to train the model (***Note***: the buffer contains only the raw values of the examples, so q-values will be calculated again based on current networks' weights - which is the whole point anyway).
@@ -57,11 +56,22 @@ The network layers are as follows:
 
 Regarding the hidden layers, I'm considering the implementation of LeakyReLu activations instead of plain ReLu, since it will provide the flexibility of having negative outputs in those layers as well. The drawback with this idea is that it will possibly cause the outputs to deviate and thus slow down learning.
 
-Another concern has to do with the scale difference between inputs and outputs. Inputs have a scale of $i * 10^2$, whereas outputs are in most cases around $i * 10^0$ (except for when the action is infeasible, in which case the reward is placed at -1000). I believe that lowering the scale of the inputs to match that of the outputs will accelerate learning, therefore I am about to implement one of the following alternatives:
+Another concern has to do with the scale difference between inputs and outputs. Inputs have a scale of $i * 10^2$, $i \epsilon (0,10)$, whereas outputs are in most cases around $i * 10^0$ (except for when the action is infeasible, in which case the reward is placed at -1000). I believe that lowering the scale of the inputs to match that of the outputs will accelerate learning, therefore I am about to implement one of the following alternatives:
 1. Normalize state features before entering the network.
 2. Implicilty lower their scale by applying batch normalization inside the network.
 3. Initialize weights in such a way so that output values are in the required scale.
 
 I am currently implementing the last idea, because I recon that the scale of the features has a meaning in the solution space and maybe I shouldn't distort it. I would appreciate your take on these ideas or others if I'm missing any.
 
+### Network Update
 
+As explained above, the target $y$ is calculated on a specific state-action pair. This means that for every example in the buffer, we can compare and calculate the loss only on one action's q-value. However, in order to be consistent with the network architecture, we transform $y$ into a vector at the following way:
+
+Let's consider an example which refers to action 3 with $y=10$. Predicted q-values are:
+$$ pred=\begin{bmatrix} 0 & 3 & 6 & 4 & 0 & 1 & 2 \end{bmatrix} $$
+
+Target q_values will be:
+$$ y=\begin{bmatrix} 0 & 3 & 6 & \color{Green} 10 & 0 & 1 & 2 \end{bmatrix} $$
+
+This way, when we apply the loss $(y - pred)^2$, the network will update only the weights involved in the output of this particular neuron.
+In practice we are working with mutiple examples on each update, where all the losses are averaged to produce the batch loss.
