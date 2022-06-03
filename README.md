@@ -58,3 +58,10 @@ The network layers are as follows:
 Regarding the hidden layers, I'm considering the implementation of LeakyReLu activations instead of plain ReLu, since it will provide the flexibility of having negative outputs in those layers as well. The drawback with this idea is that it will possibly cause the outputs to deviate and thus slow down learning.
 
 Another concern has to do with the scale difference between inputs and outputs. Inputs have a scale of $i * 10^2$, whereas outputs are in most cases around $i * 10^0$ (except for when the action is infeasible, in which case the reward is placed at -1000). I believe that lowering the scale of the inputs to match that of the outputs will accelerate learning, therefore I am about to implement one of the following alternatives:
+1. Normalize state features before entering the network.
+2. Implicilty lower their scale by applying batch normalization inside the network.
+3. Initialize weights in such a way so that output values are in the required scale.
+
+I am currently implementing the last idea, because I recon that the scale of the features has a meaning in the solution space and maybe I shouldn't distort it. I would appreciate your take on these ideas or others if I'm missing any.
+
+
