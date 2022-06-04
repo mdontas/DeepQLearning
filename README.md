@@ -73,5 +73,5 @@ $$ pred=\begin{bmatrix} 0 & 3 & 6 & 4 & 0 & 1 & 2 \end{bmatrix} $$
 Target q_values will be:
 $$ y=\begin{bmatrix} 0 & 3 & 6 & \color{Green} 10 & 0 & 1 & 2 \end{bmatrix} $$
 
-This way, when we apply the loss $(y - pred)^2$, the network will update only the weights involved in the output of this particular neuron.
+This way, when we apply the loss $(y - pred)^2$, the network will effectively calculate the difference between "real" and predicted values that corresponds to the calculation proposed in theory and update its weights accordingly.
 In practice we are working with mutiple examples on each update, where all the losses are averaged to produce the batch loss.
