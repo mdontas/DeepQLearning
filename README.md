@@ -42,6 +42,12 @@ In order to improve the efficacy as well as the efficiency of the learning proce
 3. At the end of each episode, draw a random sample from the buffer and use it to train the model (***Note***: the buffer contains only the raw values of the examples, so q-values will be calculated again based on current networks' weights - which is the whole point anyway).
 
 ### Exploration Strategy
+The exploration strategy is based on the idea of intrinsic rewards and aims at balancing between exploitation and exploration by reinforcing not only actions that render a high reward but also actions that lead to points of the environment that we haven't visited before. That being said, the exploration strategy for a given state is defined as follows:
+$$a = max{a_i \in A |r(s, a_i) + rexp(s, a_i)}$$
+
+For all the available actions on each state, we select to execute the one with the highest sum of exploitation and exploration rewards respectively. The exploitation reward is simply the normalized immediate reward that derives from executing the action. On the other hand, the exploration reward is calculated as the normalized euclidean distance between the next state, i.e. the state that will emerge if we choose to execute the action, and the nearest state that we have ever visited. This metric will give us an idea of how far the next state is from the directly closest state we have encountered so far.
+
+However, the process of finding the closest state among the visited ones and calculating the distance from the said state is a computationally expensive task. For this reason, we develop an additional feature with a view of avoiding as much trivial calculations as possible. The method is based on *Localilty-Sensitive-Hashing* and the work of [Tang et al. (2017)](https://www.cs.princeton.edu/courses/archive/spr04/cos598B/bib/CharikarEstim.pdf). The intuition behind this method is that we attempt to apply a series of hash functions on a state in order to retrieve a *hash code*. States (feature-vectors) with similar values will receive the same hash code, whereas vectors with distant values will have different code. In this way we can narrow down the search for the closest vector only on the ones with the same hash code.
 
 ### Network Architecture
 
@@ -54,7 +60,7 @@ The network layers are as follows:
     * load
     * load per node
     * variance of load per node
-    * cost
+    * costIn 
     * cost per node
     * variance of cost per node
     * nodes 
@@ -110,6 +116,9 @@ L_i(\theta_i)= [\ln(y_{target} * e^{-y_{pred}})]^2
 \end{equation}$$
 
 This way, when we perform a matrix multiplication between $y_{target}$ and $e^{-y_{pred}}$, the resulting value will be $e^{y-q_a}$, since all other terms of the sum will be 0. From there, we apply the natural logarithm to remove the exponential and then by squaring the difference we are left with the calculation that we aimed for at the first place. The formulation delineated above facilitates the process of calculating the loss as well as the gradients of the network, since the whole procedure is being represented as a series of fuction applications and algebraic operations.
+
+***Note:*** In practice, the above process would not work due to the precision error with float numbers. In particular, when the $y$ value was a large negative number, its exponential would result in a value that could not be expressed with the decimal places available, thus making $e^y = 0$. In order to resolve that problem, we scale down by a factor c the $y$ vectors before applying the exponential and then rescaling back with c after $ln$ has been applied.
+
 
 <!-- As explained above, the target $y$ is calculated on a specific state-action pair. This means that for every example in the buffer, we can compare and calculate the loss only on one action's q-value. However, in order to be consistent with the network architecture, we transform $y$ into a vector at the following way:
 
