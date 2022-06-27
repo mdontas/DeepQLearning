@@ -26,13 +26,26 @@ DQL is a value function method, meaning that it tries to estimate the expected f
 
 $$L_i(θ_i)= (y_i - Q(s_i,a_i;θ_i))^2$$ where $ y_i = r_i + γ*maxQ_{target}(s_{i+1};θ_t)$
 
-Two important notes here:
+Three important notes here:
 * The target $y$ depicts the expected rewards of a (state, action) pair as the sum of the immediate reward of the action and the highest expected
 value after following the optimal policy at every next state, where the latter is discounted by a fator of $γ$.
 * The next state q-values are not obtained from the trainable network; another model, the target network (with the same architecture as the original) is used to compute the max q-value for the target $y$. The only difference with the original is that this network has more stable weights, which are updated from the original, though at a slower pace using the formula:
 $$θ_t = kθ + (1-k)θ_t$$
+* $\gamma$ represents the discount factor applied to target netowrk's predicted q-values in order to reduce their influence on the exploration procedure as well as the target rewards. $\gamma$ is initially set at a small value between 0 and 1 and is constantly increased with a steady rate. The intuition behind this approach is that at first, the network is not capable of making good approximations of the expected rewards and hence we should not count on its  predictions. However, as it is gaining experience of the environment and learning more accurately we want to increase the level of confidence that we give to its approximations.
 
 ### Learning Scheme
+![image](https://user-images.githubusercontent.com/56359604/175908015-af4d93f8-ceaf-42eb-a1dd-edaf1a11f300.png)
+
+The algorithm's hyper-parameters are:
+* $v$: The number of vehicles forming a solution. This is an instance-specific parameter.
+* $s$: The number of parallel solutions guided by the simulation.
+* $k$: The number of hash functions applied to form the state's hash code.
+* $episodes$: The number of simulation-training phases
+* $ep duration$: The number of steps in the simulation
+* $\gamma$: The reward discount factor
+* $b$: The batch size for training
+* $epochs$: The number of epochs for training
+* $l$: The learning rate
 
 ### Experience Replay
 
@@ -43,9 +56,9 @@ In order to improve the efficacy as well as the efficiency of the learning proce
 
 ### Exploration Strategy
 The exploration strategy is based on the idea of intrinsic rewards and aims at balancing between exploitation and exploration by reinforcing not only actions that render a high reward but also actions that lead to points of the environment that we haven't visited before. That being said, the exploration strategy for a given state is defined as follows:
-$$a = max\{a_i \in A |r(s, a_i) + rexp(s, a_i)\}$$
+$$a = \{ a_i \in A : R_{a_i} = \max\{[r(s, a_i) + r'(s, a_i)]\} \} $$
 
-For all the available actions on each state, we select to execute the one with the highest sum of exploitation and exploration rewards respectively. The exploitation reward is simply the normalized immediate reward that derives from executing the action. On the other hand, the exploration reward is calculated as the normalized euclidean distance between the next state, i.e. the state that will emerge if we choose to execute the action, and the nearest state that we have ever visited. This metric will give us an idea of how far the next state is from the directly closest state we have encountered so far.
+For all the available actions on each state, we select to execute the one with the highest sum of exploitation and exploration rewards respectively. The exploitation reward is simply the normalized immediate reward that derives from executing the action. On the other hand, the exploration reward is calculated as the normalized euclidean distance between the next state, i.e. the state that will emerge if we choose to execute the action, and the nearest state that we have ever visited. This metric will give us an idea of how far the next state is from the directly closest state we have encountered so far and thus how "unexplored" the candidate state is.
 
 However, the process of finding the closest state among the visited ones and calculating the distance from the said state is a computationally expensive task. For this reason, we develop an additional feature with a view of avoiding as much trivial calculations as possible. The method is based on *Localilty-Sensitive-Hashing* and the work of [Tang et al. (2017)](https://www.cs.princeton.edu/courses/archive/spr04/cos598B/bib/CharikarEstim.pdf). The intuition behind this method is that we attempt to apply a series of hash functions on a state in order to retrieve a *hash code*. States (feature-vectors) with similar values will receive the same hash code, whereas vectors with distant values will have different code. In this way we can narrow down the search for the closest vector only on the ones with the same hash code. The procedure for generating the hash code, according to Tang et al., is comprised of the fololowing steps:
 1.	Initialize k random vectors drawing values from the standard Gaussian distribution.
@@ -53,6 +66,7 @@ However, the process of finding the closest state among the visited ones and cal
 3.	Turn the v vector into a binary vector $b$ by setting $b_i = 0$ if $v_i < 0.5$ else $b_i = 1$
 4.	Generate the hash code by transforming the binary vector to a decimal number.
 
+The value of k can have a double and counter-acting effect. Setting k to a large value can increase the number of calculations needed to derive the hash function, though at the same time it enhances the resolution of the codes, partitioning vectors to more sparse bins and therefore reducing the number of calculations needed to find the closest vector. After preliminary experiments, we saw that $k=50$ is a reasonable value that does not significantly slow down learning.
 
 ### Network Architecture
 
@@ -65,20 +79,20 @@ The network layers are as follows:
     * load
     * load per node
     * variance of load per node
-    * costIn 
+    * cost
     * cost per node
     * variance of cost per node
     * nodes 
   * These features are scaled down using instance-specific constants that specify their limits, so that they obtain values at the [0, 1] scale (for instance, cost-related features are scaled down by the Tmax constraint which sets the max route cost).
 * **1st hidden layer**:
-  * 32 neurons
+  * Size: $(|V|, 10)$, a 10-neuron layer for each of the $V$ input vectors
   * ReLu activation 
 * **Flattened layer**:
   * $10|V|$ neurons
 * **Dropout layer**:
   * 20% dropout
 * **2nd hidden layer**:
-  * $(10|V| + A) / 2$ neurons
+  * $\frac{10|V| + A}{2}$ neurons
   * ReLu activation
 * **Output layer**:
   * $A$ neurons (as many as the actions)
