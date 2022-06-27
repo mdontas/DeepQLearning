@@ -43,11 +43,16 @@ In order to improve the efficacy as well as the efficiency of the learning proce
 
 ### Exploration Strategy
 The exploration strategy is based on the idea of intrinsic rewards and aims at balancing between exploitation and exploration by reinforcing not only actions that render a high reward but also actions that lead to points of the environment that we haven't visited before. That being said, the exploration strategy for a given state is defined as follows:
-$$a = max{a_i \in A |r(s, a_i) + rexp(s, a_i)}$$
+$$a = max\{a_i \in A |r(s, a_i) + rexp(s, a_i)\}$$
 
 For all the available actions on each state, we select to execute the one with the highest sum of exploitation and exploration rewards respectively. The exploitation reward is simply the normalized immediate reward that derives from executing the action. On the other hand, the exploration reward is calculated as the normalized euclidean distance between the next state, i.e. the state that will emerge if we choose to execute the action, and the nearest state that we have ever visited. This metric will give us an idea of how far the next state is from the directly closest state we have encountered so far.
 
-However, the process of finding the closest state among the visited ones and calculating the distance from the said state is a computationally expensive task. For this reason, we develop an additional feature with a view of avoiding as much trivial calculations as possible. The method is based on *Localilty-Sensitive-Hashing* and the work of [Tang et al. (2017)](https://www.cs.princeton.edu/courses/archive/spr04/cos598B/bib/CharikarEstim.pdf). The intuition behind this method is that we attempt to apply a series of hash functions on a state in order to retrieve a *hash code*. States (feature-vectors) with similar values will receive the same hash code, whereas vectors with distant values will have different code. In this way we can narrow down the search for the closest vector only on the ones with the same hash code.
+However, the process of finding the closest state among the visited ones and calculating the distance from the said state is a computationally expensive task. For this reason, we develop an additional feature with a view of avoiding as much trivial calculations as possible. The method is based on *Localilty-Sensitive-Hashing* and the work of [Tang et al. (2017)](https://www.cs.princeton.edu/courses/archive/spr04/cos598B/bib/CharikarEstim.pdf). The intuition behind this method is that we attempt to apply a series of hash functions on a state in order to retrieve a *hash code*. States (feature-vectors) with similar values will receive the same hash code, whereas vectors with distant values will have different code. In this way we can narrow down the search for the closest vector only on the ones with the same hash code. The procedure for generating the hash code, according to Tang et al., is comprised of the fololowing steps:
+1.	Initialize k random vectors drawing values from the standard Gaussian distribution.
+2.	Calculate the angular distance between the state vector and each of the k vectors as $$1 – \frac{\theta(s, r_i)}{\pi}$$, $\forall i \in$ \{$0, 1, ..., k$\}. This will result to a vector $v$ of size k.
+3.	Turn the v vector into a binary vector $b$ by setting $b_i = 0$ if $v_i < 0.5$ else $b_i = 1$
+4.	Generate the hash code by transforming the binary vector to a decimal number.
+
 
 ### Network Architecture
 
