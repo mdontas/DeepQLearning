@@ -33,20 +33,6 @@ value after following the optimal policy at every next state, where the latter i
 $$θ_t = kθ + (1-k)θ_t$$
 * $\gamma$ represents the discount factor applied to target netowrk's predicted q-values in order to reduce their influence on the exploration procedure as well as the target rewards. $\gamma$ is initially set at a small value between 0 and 1 and is constantly increased with a steady rate. The intuition behind this approach is that at first, the network is not capable of making good approximations of the expected rewards and hence we should not count on its  predictions. However, as it is gaining experience of the environment and learning more accurately we want to increase the level of confidence that we give to its approximations.
 
-### Learning Scheme
-![image](https://user-images.githubusercontent.com/56359604/175908015-af4d93f8-ceaf-42eb-a1dd-edaf1a11f300.png)
-
-The algorithm's hyper-parameters are:
-* $v$: The number of vehicles forming a solution. This is an instance-specific parameter.
-* $s$: The number of parallel solutions guided by the simulation.
-* $k$: The number of hash functions applied to form the state's hash code.
-* $episodes$: The number of simulation-training phases
-* $ep duration$: The number of steps in the simulation
-* $\gamma$: The reward discount factor
-* $b$: The batch size for training
-* $epochs$: The number of epochs for training
-* $l$: The learning rate
-
 ### Experience Replay
 
 In order to improve the efficacy as well as the efficiency of the learning process, the idea of experience replay is implemented. According to it, the examples ran at each iteration are stored in a buffer, from where a sample is taken in order to calculate the gradients and update the weights. The replay buffer follows the **SARS** logic (state, action, rewards, next state). In a nutshell, the overall process has the following steps:
@@ -55,10 +41,10 @@ In order to improve the efficacy as well as the efficiency of the learning proce
 3. At the end of each episode, draw a random sample from the buffer and use it to train the model (***Note***: the buffer contains only the raw values of the examples, so q-values will be calculated again based on current networks' weights - which is the whole point anyway).
 
 ### Exploration Strategy
-The exploration strategy is based on the idea of intrinsic rewards and aims at balancing between exploitation and exploration by reinforcing not only actions that render a high reward but also actions that lead to points of the environment that we haven't visited before. That being said, the exploration strategy for a given state is defined as follows:
+The exploration strategy is based on the idea of intrinsic rewards and aims at balancing between exploitation and exploration by reinforcing not only actions that render a high reward but also actions that lead to points of the environment that we haven't visited before. That being said, the exploration strategy for a given state $s$ is defined as follows:
 $$a = \{ a_i \in A : R_{a_i} = \max\{[r(s, a_i) + r'(s, a_i)]\} \} $$
 
-For all the available actions on each state, we select to execute the one with the highest sum of exploitation and exploration rewards respectively. The exploitation reward is simply the normalized immediate reward that derives from executing the action. On the other hand, the exploration reward is calculated as the normalized euclidean distance between the next state, i.e. the state that will emerge if we choose to execute the action, and the nearest state that we have ever visited. This metric will give us an idea of how far the next state is from the directly closest state we have encountered so far and thus how "unexplored" the candidate state is.
+For all the available actions on each state, we select to execute the one with the highest sum of exploitation and exploration reward respectively. The **exploitation reward** is simply the normalized immediate reward that derives from executing the action. On the other hand, the **exploration reward** is calculated as the normalized euclidean distance between the next state, i.e. the state that will emerge if we choose to execute the action, and the nearest state that we have ever visited. This metric will give us an idea of how far the next state is from the directly closest state we have encountered so far and thus how "unexplored" the candidate state is.
 
 However, the process of finding the closest state among the visited ones and calculating the distance from the said state is a computationally expensive task. For this reason, we develop an additional feature with a view of avoiding as much trivial calculations as possible. The method is based on *Localilty-Sensitive-Hashing* and the work of [Tang et al. (2017)](https://www.cs.princeton.edu/courses/archive/spr04/cos598B/bib/CharikarEstim.pdf). The intuition behind this method is that we attempt to apply a series of hash functions on a state in order to retrieve a *hash code*. States (feature-vectors) with similar values will receive the same hash code, whereas vectors with distant values will have different code. In this way we can narrow down the search for the closest vector only on the ones with the same hash code. The procedure for generating the hash code, according to Tang et al., is comprised of the fololowing steps:
 1.	Initialize k random vectors drawing values from the standard Gaussian distribution.
@@ -149,3 +135,20 @@ $$ y=\begin{bmatrix} 0 & 3 & 6 & \color{Green} 10 & 0 & 1 & 2 \end{bmatrix} $$
 
 This way, when we apply the loss $(y - pred)^2$, the network will effectively calculate the difference between "real" and predicted values that corresponds to the calculation proposed in theory and update its weights accordingly.
 In practice we are working with mutiple examples on each update, where all the losses are averaged to produce the batch loss. -->
+
+
+### Learning Scheme
+To summarize, we present an outline of the learning mechanism:
+
+![image](https://user-images.githubusercontent.com/56359604/175908015-af4d93f8-ceaf-42eb-a1dd-edaf1a11f300.png)
+
+The algorithm's hyper-parameters are:
+* $v$: The number of vehicles forming a solution. This is an instance-specific parameter.
+* $s$: The number of parallel solutions guided by the simulation.
+* $k$: The number of hash functions applied to form the state's hash code.
+* $episodes$: The number of simulation-training phases
+* $ep duration$: The number of steps in the simulation
+* $\gamma$: The reward discount factor
+* $b$: The batch size for training
+* $epochs$: The number of epochs for training
+* $l$: The learning rate
