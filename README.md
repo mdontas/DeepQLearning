@@ -14,6 +14,9 @@ The said algorithm consists of the following main components:
   5. Relocation of an inner node to another position in the solution
   6. [2opt](https://en.wikipedia.org/wiki/2-opt) move
   7. Execution of a [TSP heuristic](http://webhotel4.ruc.dk/~keld/research/LKH/) on every solution route
+  8. Execution of a MIP model for simultenous insertions and deletions of customers from routes.
+  
+  ***Note***: The last two operators are not included in the learning mechanism due to their complexity as methods as well as their significantly greater computational cost compared to the other ones.
 
 The way DQL pursues to increase the quality of the algorithm is by tackling the
 problem of optimallly selecting among the available operators at each iteration.
@@ -152,3 +155,14 @@ The algorithm's hyper-parameters are:
 * $b$: The batch size for training
 * $epochs$: The number of epochs for training
 * $l$: The learning rate
+
+### Overall Scheme
+
+The complete implemented methodology is presented at the following pseudocode:
+
+![image](https://user-images.githubusercontent.com/56359604/176041014-27909d0d-39ff-446f-9595-7a06eb8ad463.png)
+
+At first we train the network on the instance specified. Then, for each iteration we execute the following steps:
+* We select the best action to perform by choosing the one with the highest reward predicted by the dqn.
+* We execute the action to get the new solution and check if we have found a new best.
+* If a new best solution has not been found for a certain number of consecutive iterations, call the intensification methods (TSP and MIP) to transfer the solution to a new neighborhood.
