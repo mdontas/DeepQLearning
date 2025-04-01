@@ -27,7 +27,7 @@ on each solution state with a view of eventually achieving the biggest profit po
 
 DQL is a value function method, meaning that it tries to estimate the expected future reward of an action executed on a certain state. It uses a neural network as a value function approximator, which is trained via the following loss function:
 
-$$L_i(θ_i)= (y_i - Q(s_i,a_i;θ_i))^2$$ where $ y_i = r_i + γ*maxQ_{target}(s_{i+1};θ_t)$
+$$L_i(θ_i)= (y_i - Q(s_i,a_i;θ_i))^2$$ where $$ y_i = r_i + γ*maxQ_{target}(s_{i+1};θ_t)$$
 
 Three important notes here:
 * The target $y$ depicts the expected rewards of a (state, action) pair as the sum of the immediate reward of the action and the highest expected
@@ -101,6 +101,7 @@ I am currently implementing the last idea, because I recon that the scale of the
 As explained above, during each exploration step only one action is executed. This implies that, albeit the network has predicted the q-values for every state-action pair, the target value corresponds to a single pair at each step and therefore we are able to compute the loss only on the respective pair. However, we must also be consistent with the network architecture and assure that the target values have the same shape as the vectors of predicted values. Hence, we will transform the target value into a vector at the following way:
 
 For an $A$ number of available actions the predicted q-values will be:
+
 $$ y_{pred}=\begin{bmatrix} q_0 & q_1 & ... & q_{A-2} & q_{A-1} \end{bmatrix} $$
 
 Let's consider $a$ to be the selected action on a certain step and $y$ the respective target reward. We construct the $A$-length vector of target values using the below function:
@@ -114,6 +115,7 @@ $$\begin{equation}
 \end{equation}$$
 
 This will result to a target vector as below:
+
 $$ y_{target}=\begin{bmatrix} 0 & 0 & ... & e^{y} & ... & 0 & 0 \end{bmatrix} $$
 
 Having formed the above vectors, we can compute the loss defined in \ref{loss} 
