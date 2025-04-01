@@ -145,7 +145,7 @@ In practice we are working with mutiple examples on each update, where all the l
 ### Learning Scheme
 To summarize, we present an outline of the learning mechanism:
 
-![image](https://user-images.githubusercontent.com/56359604/175908015-af4d93f8-ceaf-42eb-a1dd-edaf1a11f300.png)
+![image info](images/train_dq.png)
 
 The algorithm's hyper-parameters are:
 * $v$: The number of vehicles forming a solution. This is an instance-specific parameter.
@@ -162,7 +162,7 @@ The algorithm's hyper-parameters are:
 
 The complete implemented methodology is presented at the following pseudocode:
 
-![image](https://user-images.githubusercontent.com/56359604/176041014-27909d0d-39ff-446f-9595-7a06eb8ad463.png)
+![image info](images/algo.png)
 
 At first we train the network on the instance specified. Then, for each iteration we execute the following steps:
 * We select the best action to perform by choosing the one with the highest reward predicted by the dqn.
