@@ -16,7 +16,7 @@ The said algorithm consists of the following main components:
   7. Execution of a [TSP heuristic](http://webhotel4.ruc.dk/~keld/research/LKH/) on every solution route
   8. Execution of a MIP model for simultenous insertions and deletions of customers from routes.
   
-  ***Note***: The last two operators are not included in the learning mechanism due to their complexity as methods as well as their significantly greater computational cost compared to the other ones.
+  ***Note***: The last two operators are not included in the learning mechanism due to their complexity as methods, as well as their significantly greater computational cost compared to the other ones.
 
 The way DQL pursues to increase the quality of the algorithm is by tackling the
 problem of optimallly selecting among the available operators at each iteration.
