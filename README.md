@@ -168,3 +168,20 @@ At first we train the network on the instance specified. Then, for each iteratio
 * We select the best action to perform by choosing the one with the highest reward predicted by the dqn.
 * We execute the action to get the new solution and check if we have found a new best.
 * If a new best solution has not been found for a certain number of consecutive iterations, call the intensification methods (TSP and MIP) to transfer the solution to a new neighborhood.
+
+### Experimental Results
+
+The table below summarizes our computational results against baselines on benchmark instances:
+
+![image info](images/results.png)
+
+For every algorithm three columns are shown: the objective found by the best execution of the algorithm (Zmax), the
+percentage gap between the current objective and the best among the algorithms of the previous papers (RPE) and finally
+the execution time of the best repetition of the algorithm (TTB).
+
+We notice that our approach does not manage to outperform any of the previous works and contributes the least to the best known solutions in literature.
+However, it is worth mentioning that the instances for which it achieves improved results in comparison with the baselines have
+something in common that distinguishes them from the rest: the number of vehicles is significantly larger with values
+ranging from 14 to 24, whereas for all the remaining instances that number oscillates between 6 and 8. Therefore, we can
+deduce that our methodology achieves deeper exploration of the solution space when the combinatorics of the problem
+increase by the presence of a larger fleet of vehicles, which could motivate future research for harder and more complex instances.
